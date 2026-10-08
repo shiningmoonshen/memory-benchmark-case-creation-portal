@@ -24,6 +24,7 @@ export class AnthropicProvider implements LLMProvider {
       throw new Error("invalid_request_error: user message content is empty");
     }
 
+    const start = Date.now();
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
@@ -35,11 +36,17 @@ export class AnthropicProvider implements LLMProvider {
           messages: [{ role: "user", content: user }],
           ...(config.testModel.supportsTemperature ? { temperature: 0 } : {}),
         },
-        { signal: controller.signal }
+        { signal: controller.signal, timeout: timeoutMs }
       );
       const block = response.content[0];
       if (!block || block.type !== "text") throw new Error("unexpected content type from Anthropic");
       return block.text;
+    } catch (err) {
+      const elapsedMs = Date.now() - start;
+      if (controller.signal.aborted) {
+        throw new Error(`provider timeout after ${elapsedMs}ms`);
+      }
+      throw err;
     } finally {
       clearTimeout(timer);
     }

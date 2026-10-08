@@ -20,6 +20,7 @@ export class OpenAIProvider implements LLMProvider {
     maxTokens: number;
     timeoutMs: number;
   }): Promise<string> {
+    const start = Date.now();
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
@@ -32,9 +33,15 @@ export class OpenAIProvider implements LLMProvider {
           max_output_tokens: maxTokens,
           // temperature not sent — reasoning models do not support it
         },
-        { signal: controller.signal }
+        { signal: controller.signal, timeout: timeoutMs }
       );
       return response.output_text;
+    } catch (err) {
+      const elapsedMs = Date.now() - start;
+      if (controller.signal.aborted) {
+        throw new Error(`provider timeout after ${elapsedMs}ms`);
+      }
+      throw err;
     } finally {
       clearTimeout(timer);
     }

@@ -12,7 +12,7 @@ import { FakeSheetsClient } from "@/lib/sheets/fakeClient";
 import { COLUMN_HEADERS } from "@/lib/sheets/rowBuilder";
 import { config } from "@/lib/config";
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 function getProviders() {
   if (process.env.LLM_MODE === "mock") {
