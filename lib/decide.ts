@@ -1,4 +1,5 @@
 import type { Outcome } from "./schema";
+import { config } from "./config";
 
 interface DecideInput {
   wrongCount: number;
@@ -8,7 +9,7 @@ interface DecideInput {
 
 export function decide({ wrongCount, oracleCorrect, hasError }: DecideInput): Outcome {
   if (hasError) return "ERROR";
-  if (wrongCount <= 1) return "FAIL";
+  if (wrongCount < config.passThreshold) return "FAIL";
   if (oracleCorrect) return "PASS";
   return "FLAGGED";
 }

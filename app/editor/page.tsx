@@ -252,7 +252,9 @@ export default function EditorPage() {
 
   if (phase === "done" && result) {
     const firstWrongIdx = result.testVerdicts?.findIndex((v) => v.verdict === "incorrect") ?? 0;
-    const firstWrongAnswer = result.testAnswers?.[firstWrongIdx >= 0 ? firstWrongIdx : 0];
+    const firstWrongSlot = firstWrongIdx >= 0 ? firstWrongIdx : 0;
+    const firstWrongAnswer = result.testAnswers?.[firstWrongSlot];
+    const firstWrongReason = result.testVerdicts?.[firstWrongSlot]?.reason;
 
     return (
       <div className="editor-page">
@@ -265,6 +267,9 @@ export default function EditorPage() {
                 </h2>
                 <p className="result-label">The AI's wrong answer:</p>
                 <blockquote className="result-answer">{firstWrongAnswer ?? "—"}</blockquote>
+                {firstWrongReason && (
+                  <p className="result-reason">{firstWrongReason}</p>
+                )}
                 <div className="result-actions">
                   <button className="btn-primary" onClick={resetFresh}>
                     Write another case
@@ -304,10 +309,13 @@ export default function EditorPage() {
                 <h2 className="result-heading result-flagged">
                   This case may be ambiguous, or the expected answer may be off
                 </h2>
-                <p className="result-label">The oracle's answer:</p>
+                <p className="result-label">The AI's answer when shown only the relevant lines (the oracle's answer):</p>
                 <blockquote className="result-answer">
                   {result.oracleAnswer ?? "—"}
                 </blockquote>
+                {result.oracleVerdict?.reason && (
+                  <p className="result-reason">{result.oracleVerdict.reason}</p>
+                )}
                 <div className="result-actions">
                   <button className="btn-primary" onClick={keepEditing}>
                     Keep editing
@@ -508,11 +516,9 @@ export default function EditorPage() {
                 {" · "}
                 <button
                   className="inline-btn"
-                  onClick={() =>
-                    setDraft((d) => ({ ...d, questionType: "abstention" }))
-                  }
+                  onClick={() => setMismatch("none")}
                 >
-                  No, use abstention
+                  Edit
                 </button>
               </div>
             )}

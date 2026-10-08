@@ -22,6 +22,18 @@ export interface ValidationResult {
   mismatch: boolean;
 }
 
+function looksLikeIDontKnow(answer: string): boolean {
+  const lower = answer.toLowerCase();
+  return (
+    lower.includes("don't know") ||
+    lower.includes("do not know") ||
+    lower.includes("doesn't know") ||
+    lower.includes("not provided") ||
+    lower.includes("wasn't provided") ||
+    lower.includes("wasn't given")
+  );
+}
+
 export function validateCase(input: ValidateInput): ValidationResult {
   const errors: FieldErrors = {};
 
@@ -44,7 +56,9 @@ export function validateCase(input: ValidateInput): ValidationResult {
     errors.memoryLength = `Memory exceeds the ${config.maxMemoryChars.toLocaleString()} character limit.`;
   }
 
-  const mismatch = input.evidence === "" && input.questionType !== "abstention";
+  const mismatch =
+    input.evidence === "" &&
+    (input.questionType !== "abstention" || !looksLikeIDontKnow(input.expectedAnswer));
 
   return {
     valid: Object.keys(errors).length === 0,

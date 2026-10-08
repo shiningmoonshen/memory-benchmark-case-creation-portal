@@ -88,9 +88,24 @@ describe("validateCase", () => {
     expect(result.mismatch).toBe(true);
   });
 
-  it("does not set mismatch when evidence is blank and question type is abstention", () => {
-    const result = validateCase({ ...baseInput, evidence: "", questionType: "abstention" });
+  it("does not set mismatch when evidence is blank, type is abstention, and expected answer looks like 'I don't know'", () => {
+    const result = validateCase({
+      ...baseInput,
+      evidence: "",
+      questionType: "abstention",
+      expectedAnswer: "I don't know — that info wasn't provided.",
+    });
     expect(result.mismatch).toBe(false);
+  });
+
+  it("sets mismatch when evidence is blank, type is abstention, but expected answer doesn't look like 'I don't know'", () => {
+    const result = validateCase({
+      ...baseInput,
+      evidence: "",
+      questionType: "abstention",
+      expectedAnswer: "The budget is $50,000",
+    });
+    expect(result.mismatch).toBe(true);
   });
 
   it("does not set mismatch when evidence is provided", () => {
