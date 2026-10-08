@@ -9,7 +9,7 @@ interface ValidateInput {
   evidence: string;
 }
 
-interface FieldErrors {
+export interface FieldErrors {
   memory?: string;
   prompt?: string;
   expectedAnswer?: string;

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { QuestionType } from "@/lib/schema";
-import { validateCase, totalMemoryChars } from "@/lib/validate";
+import { validateCase, totalMemoryChars, type FieldErrors } from "@/lib/validate";
 import { config } from "@/lib/config";
 import examples from "@/seed/examples.json";
 
@@ -78,7 +78,7 @@ export default function EditorPage() {
   const [phase, setPhase] = useState<"idle" | "running" | "done">("idle");
   const [progressMsg, setProgressMsg] = useState("Running the AI…");
   const [result, setResult] = useState<SubmitResult | null>(null);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<FieldErrors>({});
   const [mismatch, setMismatch] = useState<"none" | "warning" | "confirmed">("none");
 
   // Load character + draft
