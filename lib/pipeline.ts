@@ -3,7 +3,7 @@ import { config } from "./config";
 import { buildTestPrompt, buildOraclePrompt, buildJudgePrompt } from "./prompts";
 import { parseJudgeResponse } from "./judgeParse";
 import { decide } from "./decide";
-import { resolveVersion } from "./versioning";
+import { resolveVersion, type VersionInfo } from "./versioning";
 import { buildRow } from "./sheets/rowBuilder";
 import { classifyError, type ErrorDetail } from "./errors";
 import { logStage } from "./logger";
@@ -45,7 +45,7 @@ export async function runPipeline(
 ): Promise<PipelineResult> {
   // Resolve version info up front so it's available for both success and error rows.
   // resolveVersion has its own internal fallback; the outer guard handles edge cases.
-  let versionInfo = { submissionId: randomUUID(), caseId: randomUUID(), version: 1 };
+  let versionInfo: VersionInfo = { submissionId: randomUUID(), caseId: randomUUID(), version: 1 };
   try {
     versionInfo = await resolveVersion(caseInput.parentSubmissionId, sheetsClient);
   } catch {
