@@ -2,7 +2,7 @@ export const config = {
   testModel: {
     provider: "anthropic" as const,
     modelId: "claude-sonnet-5-5",
-    supportsTemperature: true,
+    supportsTemperature: false,
   },
   judgeModel: {
     provider: "openai" as const,
