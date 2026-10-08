@@ -52,6 +52,21 @@ Push to GitHub, import the repo in the [Vercel dashboard](https://vercel.com), a
 
 ---
 
+## Findings
+
+**Full-context Sonnet 5.5 solved every case tried**, including a 9-block, multi-trap PTO case designed to mislead with conflicting dates and partial information across multiple conversations.
+
+**The 40k-character cap makes perfect recall easy.** When the model sees the entire memory verbatim, retrieval is trivially solved — there's nothing to retrieve. Cases only pass the 2-of-3 gate if the reasoning itself is hard, not if the information is hard to find.
+
+**This is why the design routes memory through a swappable adapter.** With full-context delivery, the benchmark measures reasoning difficulty in isolation, which is useful for calibration but not for measuring real-world memory systems. The interesting failures should show up when memory is delivered through RAG or a summarization pipeline, where the model never sees everything at once and retrieval quality determines whether the right evidence is present at all.
+
+**Next steps:**
+- Raise the memory cap and test with longer haystacks to find the full-context reasoning ceiling
+- Add memory adapters (RAG, sliding-window summarization) so the same cases test retrieval quality, not just reasoning
+- Add AI assist to generate realistic filler conversations at scale, so experts can focus on writing the trap question rather than populating the surrounding context
+
+---
+
 ## Decisions and tradeoffs
 
 ### Full-context memory prompt
