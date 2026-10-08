@@ -352,7 +352,7 @@ export default function EditorPage() {
           <button
             className="btn-submit"
             onClick={() => doSubmit()}
-            disabled={phase === "running"}
+            disabled={phase !== "idle"}
           >
             Submit
           </button>
