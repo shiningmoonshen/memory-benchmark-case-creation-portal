@@ -38,8 +38,9 @@ export class AnthropicProvider implements LLMProvider {
         },
         { signal: controller.signal, timeout: timeoutMs }
       );
-      const block = response.content[0];
-      if (!block || block.type !== "text") throw new Error("unexpected content type from Anthropic");
+      // claude-sonnet-5-5 and later may prepend a thinking block; find the first text block
+      const block = response.content.find((b) => b.type === "text");
+      if (!block || block.type !== "text") throw new Error("no text block in Anthropic response");
       return block.text;
     } catch (err) {
       const elapsedMs = Date.now() - start;
