@@ -205,7 +205,7 @@ export default function EditorPage() {
       setResult(data);
       setPhase("done");
     } catch {
-      setResult({ outcome: "ERROR", errorDetail: "network error" });
+      setResult({ outcome: "ERROR", errorInfo: { stage: "network", code: "PROVIDER_TIMEOUT" } });
       setPhase("done");
     }
   };
