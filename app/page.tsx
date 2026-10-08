@@ -1,3 +1,5 @@
-export default function Home() {
-  return <main>Coming soon.</main>;
+import CharacterSelect from "./components/CharacterSelect";
+
+export default function HomePage() {
+  return <CharacterSelect passcodeRequired={!!process.env.APP_PASSCODE} />;
 }

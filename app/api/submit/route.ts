@@ -7,6 +7,7 @@ import { AnthropicProvider } from "@/lib/providers/anthropic";
 import { OpenAIProvider } from "@/lib/providers/openai";
 import { MockProvider } from "@/lib/providers/mock";
 import { createSheetsClient } from "@/lib/sheets/client";
+import { FakeSheetsClient } from "@/lib/sheets/fakeClient";
 
 export const maxDuration = 60;
 
@@ -57,7 +58,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   const { testProvider, judgeProvider } = getProviders();
-  const sheetsClient = createSheetsClient();
+  const sheetsClient =
+    process.env.LLM_MODE === "mock" ? new FakeSheetsClient() : createSheetsClient();
 
   const result = await runPipeline(caseInput, testProvider, judgeProvider, sheetsClient);
   return NextResponse.json(result);
