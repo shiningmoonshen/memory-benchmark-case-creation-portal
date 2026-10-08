@@ -34,7 +34,7 @@ describe("PASS outcome smoke test", () => {
     const judgeProvider = new MockProvider("pass");
     const sheets = new FakeSheetsClient();
 
-    const result = await runPipeline(normalCase, testProvider, judgeProvider, sheets);
+    const result = await runPipeline(normalCase, testProvider, judgeProvider, sheets, "test-req-pass");
 
     expect(result.outcome).toBe("PASS");
     expect(result.wrongCount).toBeGreaterThanOrEqual(2);
@@ -56,7 +56,7 @@ describe("PASS outcome smoke test", () => {
     const judgeProvider = new MockProvider("pass");
     const sheets = new FakeSheetsClient();
 
-    const result = await runPipeline(normalCase, testProvider, judgeProvider, sheets);
+    const result = await runPipeline(normalCase, testProvider, judgeProvider, sheets, "test-req-pass");
 
     const wrongAnswers = result.testAnswers.filter((_, i) => result.testVerdicts[i].verdict === "incorrect");
     expect(wrongAnswers.length).toBeGreaterThanOrEqual(2);

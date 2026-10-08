@@ -30,13 +30,14 @@ interface DraftState {
 
 interface SubmitResult {
   outcome: "PASS" | "FAIL" | "FLAGGED" | "ERROR";
+  requestId?: string;
   submissionId?: string;
   testAnswers?: string[];
   testVerdicts?: { verdict: string; reason: string }[];
   wrongCount?: number;
   oracleAnswer?: string;
   oracleVerdict?: { verdict: string; reason: string } | null;
-  errorDetail?: string;
+  errorInfo?: { stage: string; code: string; message?: string };
 }
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -329,6 +330,15 @@ export default function EditorPage() {
                 <h2 className="result-heading result-error">
                   Something went wrong on our end, so your case wasn't judged.
                 </h2>
+                {result.requestId && (
+                  <p className="error-id">Error ID: {result.requestId}</p>
+                )}
+                {result.errorInfo && (
+                  <p className="error-debug">
+                    {result.errorInfo.stage} · {result.errorInfo.code}
+                    {result.errorInfo.message ? ` · ${result.errorInfo.message}` : ""}
+                  </p>
+                )}
                 <div className="result-actions">
                   <button className="btn-primary" onClick={() => setPhase("idle")}>
                     Try again

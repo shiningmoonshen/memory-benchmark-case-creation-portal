@@ -60,6 +60,7 @@ export type JudgeResponse = z.infer<typeof JudgeResponseSchema>;
 
 export interface PipelineResult {
   outcome: Outcome;
+  requestId: string;
   submissionId: string;
   caseId: string;
   version: number;
@@ -69,5 +70,8 @@ export interface PipelineResult {
   oracleAnswer: string;
   oracleVerdict: JudgeResponse | null;
   flags: string[];
-  errorDetail?: string;
+  /** stage:code written to the Error detail column; "" for non-error outcomes */
+  errorDetail: string;
+  /** present only for ERROR outcomes; message stripped from client response when not in debug mode */
+  errorInfo?: { stage: string; code: string; message: string };
 }

@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { CaseInputSchema } from "@/lib/schema";
@@ -25,7 +26,17 @@ function getProviders() {
   };
 }
 
+/** Debug error detail is only included for local + preview, never production */
+function isDebugMode(): boolean {
+  return (
+    process.env.DEBUG_ERRORS === "true" &&
+    process.env.VERCEL_ENV !== "production"
+  );
+}
+
 export async function POST(req: NextRequest): Promise<NextResponse> {
+  const requestId = randomUUID();
+
   if (process.env.APP_PASSCODE) {
     const passcode = req.headers.get("x-passcode");
     if (passcode !== process.env.APP_PASSCODE) {
@@ -61,6 +72,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const sheetsClient =
     process.env.LLM_MODE === "mock" ? new FakeSheetsClient() : createSheetsClient();
 
-  const result = await runPipeline(caseInput, testProvider, judgeProvider, sheetsClient);
-  return NextResponse.json(result);
+  const result = await runPipeline(caseInput, testProvider, judgeProvider, sheetsClient, requestId);
+
+  // Strip message from errorInfo unless in debug mode (never expose in production)
+  const { errorInfo } = result;
+  const clientErrorInfo = errorInfo
+    ? isDebugMode()
+      ? errorInfo
+      : { stage: errorInfo.stage, code: errorInfo.code }
+    : undefined;
+
+  return NextResponse.json({ ...result, errorInfo: clientErrorInfo });
 }

@@ -27,9 +27,10 @@ describe("submit pipeline smoke test", () => {
     const judgeProvider = new MockProvider("fail");
     const sheets = new FakeSheetsClient();
 
-    const result = await runPipeline(normalCase, testProvider, judgeProvider, sheets);
+    const result = await runPipeline(normalCase, testProvider, judgeProvider, sheets, "test-req-1");
 
     expect(result.outcome).not.toBe("ERROR");
+    expect(result.requestId).toBe("test-req-1");
     expect(result.submissionId).toBeTruthy();
     expect(result.caseId).toBeTruthy();
     expect(typeof result.version).toBe("number");
@@ -44,7 +45,7 @@ describe("submit pipeline smoke test", () => {
     const judgeProvider = new MockProvider("fail");
     const sheets = new FakeSheetsClient();
 
-    const result = await runPipeline(normalCase, testProvider, judgeProvider, sheets);
+    const result = await runPipeline(normalCase, testProvider, judgeProvider, sheets, "test-req-2");
 
     expect(result.testAnswers).toHaveLength(config.runs);
     expect(result.testVerdicts).toHaveLength(config.runs);

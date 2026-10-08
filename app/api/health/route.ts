@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { config } from "@/lib/config";
+import { classifyError } from "@/lib/errors";
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
   if (process.env.APP_PASSCODE) {
@@ -16,14 +18,25 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     SHEET_ID: process.env.SHEET_ID ? "present" : "missing",
   };
 
+  // Sheets: auth + both tabs checked separately
   try {
     const { createSheetsClient } = await import("@/lib/sheets/client");
     const client = createSheetsClient();
-    await client.getRows("All submissions");
-    checks.sheets = "ok";
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : "unknown error";
-    checks.sheets = `error: ${msg}`;
+
+    for (const tabKey of ["all", "passed"] as const) {
+      const tabName = config.sheetTabs[tabKey];
+      try {
+        await client.getRows(tabName);
+        checks[`sheets:${tabName}`] = "ok";
+      } catch (err) {
+        checks[`sheets:${tabName}`] = classifyError(err, "sheets_write").code;
+      }
+    }
+  } catch (err) {
+    const code = classifyError(err, "sheets_write").code;
+    checks["sheets:auth"] = code;
+    checks[`sheets:${config.sheetTabs.all}`] = "skipped";
+    checks[`sheets:${config.sheetTabs.passed}`] = "skipped";
   }
 
   const allOk = Object.values(checks).every((v) => v === "present" || v === "ok");

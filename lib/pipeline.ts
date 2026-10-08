@@ -5,6 +5,8 @@ import { parseJudgeResponse } from "./judgeParse";
 import { decide } from "./decide";
 import { resolveVersion } from "./versioning";
 import { buildRow } from "./sheets/rowBuilder";
+import { classifyError, type ErrorDetail } from "./errors";
+import { logStage } from "./logger";
 import type { CaseInput, PipelineResult, JudgeResponse } from "./schema";
 import type { LLMProvider } from "./providers/types";
 import type { SheetsClient } from "./sheets/types";
@@ -34,21 +36,10 @@ async function callJudge(
   return result.response;
 }
 
-function sanitizeError(err: unknown): string {
-  if (err instanceof Error) {
-    const msg = err.message.toLowerCase();
-    if (msg.includes("abort") || msg.includes("timeout")) return "provider timeout";
-    if (msg.includes("auth") || msg.includes("api key")) return "provider auth error";
-    if (msg.includes("rate limit") || msg.includes("quota")) return "provider rate limit";
-    if (msg.includes("unparseable")) return "judge unparseable after retry";
-    return "provider error";
-  }
-  return "unknown error";
-}
-
-function makeErrorResult(errorDetail: string): PipelineResult {
+function makeErrorResult(requestId: string, errorInfo: ErrorDetail): PipelineResult {
   return {
     outcome: "ERROR",
+    requestId,
     submissionId: randomUUID(),
     caseId: randomUUID(),
     version: 1,
@@ -58,7 +49,8 @@ function makeErrorResult(errorDetail: string): PipelineResult {
     oracleAnswer: "",
     oracleVerdict: null,
     flags: [],
-    errorDetail,
+    errorDetail: `${errorInfo.stage}:${errorInfo.code}`,
+    errorInfo,
   };
 }
 
@@ -66,51 +58,78 @@ export async function runPipeline(
   caseInput: CaseInput,
   testProvider: LLMProvider,
   judgeProvider: LLMProvider,
-  sheetsClient: SheetsClient
+  sheetsClient: SheetsClient,
+  requestId: string
 ): Promise<PipelineResult> {
   const testPrompt = buildTestPrompt(caseInput.memory, caseInput.prompt);
   const oraclePrompt = buildOraclePrompt(caseInput.evidence, caseInput.prompt);
 
-  // 3 test runs + 1 oracle, all in parallel
+  // Stage: runs (3 test runs + oracle, all in parallel)
   let testAnswers: string[];
   let oracleAnswer: string;
-  try {
-    const allAnswers = await Promise.all([
-      ...Array.from({ length: config.runs }, () =>
+  {
+    const start = Date.now();
+    try {
+      const allAnswers = await Promise.all([
+        ...Array.from({ length: config.runs }, () =>
+          testProvider.complete({
+            system: testPrompt.system,
+            user: testPrompt.user,
+            maxTokens: config.maxOutputTokens,
+            timeoutMs: config.callTimeoutMs,
+          })
+        ),
         testProvider.complete({
-          system: testPrompt.system,
-          user: testPrompt.user,
+          system: oraclePrompt.system,
+          user: oraclePrompt.user,
           maxTokens: config.maxOutputTokens,
           timeoutMs: config.callTimeoutMs,
-        })
-      ),
-      testProvider.complete({
-        system: oraclePrompt.system,
-        user: oraclePrompt.user,
-        maxTokens: config.maxOutputTokens,
-        timeoutMs: config.callTimeoutMs,
-      }),
-    ]);
-    testAnswers = allAnswers.slice(0, config.runs);
-    oracleAnswer = allAnswers[config.runs];
-  } catch (err) {
-    return makeErrorResult(sanitizeError(err));
+        }),
+      ]);
+      testAnswers = allAnswers.slice(0, config.runs);
+      oracleAnswer = allAnswers[config.runs];
+      logStage({ requestId, stage: "runs", ok: true, durationMs: Date.now() - start });
+    } catch (err) {
+      const errorInfo = classifyError(err, "runs");
+      logStage({
+        requestId,
+        stage: "runs",
+        ok: false,
+        durationMs: Date.now() - start,
+        code: errorInfo.code,
+        error: errorInfo.message,
+      });
+      return makeErrorResult(requestId, errorInfo);
+    }
   }
 
-  // Judge all 4 answers in parallel
+  // Stage: judge (all 4 answers in parallel)
   let testVerdicts: JudgeResponse[];
   let oracleVerdict: JudgeResponse;
-  try {
-    const allVerdicts = await Promise.all([
-      ...testAnswers.map((a) =>
-        callJudge(caseInput.prompt, caseInput.expectedAnswer, a, judgeProvider)
-      ),
-      callJudge(caseInput.prompt, caseInput.expectedAnswer, oracleAnswer, judgeProvider),
-    ]);
-    testVerdicts = allVerdicts.slice(0, config.runs);
-    oracleVerdict = allVerdicts[config.runs];
-  } catch (err) {
-    return makeErrorResult(sanitizeError(err));
+  {
+    const start = Date.now();
+    try {
+      const allVerdicts = await Promise.all([
+        ...testAnswers.map((a) =>
+          callJudge(caseInput.prompt, caseInput.expectedAnswer, a, judgeProvider)
+        ),
+        callJudge(caseInput.prompt, caseInput.expectedAnswer, oracleAnswer, judgeProvider),
+      ]);
+      testVerdicts = allVerdicts.slice(0, config.runs);
+      oracleVerdict = allVerdicts[config.runs];
+      logStage({ requestId, stage: "judge", ok: true, durationMs: Date.now() - start });
+    } catch (err) {
+      const errorInfo = classifyError(err, "judge");
+      logStage({
+        requestId,
+        stage: "judge",
+        ok: false,
+        durationMs: Date.now() - start,
+        code: errorInfo.code,
+        error: errorInfo.message,
+      });
+      return makeErrorResult(requestId, errorInfo);
+    }
   }
 
   const wrongCount = testVerdicts.filter((v) => v.verdict === "incorrect").length;
@@ -140,17 +159,32 @@ export async function runPipeline(
     errorDetail: "",
   });
 
-  try {
-    await sheetsClient.append(config.sheetTabs.all, [row]);
-    if (outcome === "PASS") {
-      await sheetsClient.append(config.sheetTabs.passed, [row]);
+  // Stage: sheets_write
+  {
+    const start = Date.now();
+    try {
+      await sheetsClient.append(config.sheetTabs.all, [row]);
+      if (outcome === "PASS") {
+        await sheetsClient.append(config.sheetTabs.passed, [row]);
+      }
+      logStage({ requestId, stage: "sheets_write", ok: true, durationMs: Date.now() - start });
+    } catch (err) {
+      const errorInfo = classifyError(err, "sheets_write");
+      logStage({
+        requestId,
+        stage: "sheets_write",
+        ok: false,
+        durationMs: Date.now() - start,
+        code: errorInfo.code,
+        error: errorInfo.message,
+      });
+      return makeErrorResult(requestId, errorInfo);
     }
-  } catch {
-    return makeErrorResult("sheets write error");
   }
 
   return {
     outcome,
+    requestId,
     ...versionInfo,
     testAnswers,
     testVerdicts,
@@ -158,5 +192,6 @@ export async function runPipeline(
     oracleAnswer,
     oracleVerdict,
     flags,
+    errorDetail: "",
   };
 }

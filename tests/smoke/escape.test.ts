@@ -32,7 +32,7 @@ describe("formula injection escaping", () => {
     const judgeProvider = new MockProvider("fail");
     const sheets = new FakeSheetsClient();
 
-    await runPipeline(dangerousCase, testProvider, judgeProvider, sheets);
+    await runPipeline(dangerousCase, testProvider, judgeProvider, sheets, "test-req-escape");
 
     const rows = sheets.getAllRows(config.sheetTabs.all);
     expect(rows).toHaveLength(1);
@@ -52,7 +52,7 @@ describe("formula injection escaping", () => {
     const judgeProvider = new MockProvider("fail");
     const sheets = new FakeSheetsClient();
 
-    await runPipeline(dangerousCase, testProvider, judgeProvider, sheets);
+    await runPipeline(dangerousCase, testProvider, judgeProvider, sheets, "test-req-escape");
 
     const rows = sheets.getAllRows(config.sheetTabs.all);
     // Column 9 = Expected answer
@@ -66,7 +66,7 @@ describe("provider error → ERROR outcome", () => {
     const judgeProvider = new MockProvider("pass");
     const sheets = new FakeSheetsClient();
 
-    const result = await runPipeline(baseCase, errorProvider, judgeProvider, sheets);
+    const result = await runPipeline(baseCase, errorProvider, judgeProvider, sheets, "test-req-err");
 
     expect(result.outcome).toBe("ERROR");
   });
@@ -76,7 +76,7 @@ describe("provider error → ERROR outcome", () => {
     const judgeProvider = new MockProvider("pass");
     const sheets = new FakeSheetsClient();
 
-    const result = await runPipeline(baseCase, errorProvider, judgeProvider, sheets);
+    const result = await runPipeline(baseCase, errorProvider, judgeProvider, sheets, "test-req-err");
 
     expect(["PASS", "FAIL", "FLAGGED"]).not.toContain(result.outcome);
   });
@@ -86,7 +86,7 @@ describe("provider error → ERROR outcome", () => {
     const judgeProvider = new MockProvider("pass");
     const sheets = new FakeSheetsClient();
 
-    await runPipeline(baseCase, errorProvider, judgeProvider, sheets);
+    await runPipeline(baseCase, errorProvider, judgeProvider, sheets, "test-req-err");
 
     expect(sheets.getAllRows(config.sheetTabs.all)).toHaveLength(0);
   });
