@@ -14,7 +14,7 @@ export const config = {
   maxMemoryChars: 40_000,
   maxOutputTokens: 1024,
   judgeMaxOutputTokens: 512,
-  callTimeoutMs: 30_000,
+  callTimeoutMs: 45_000,
   sheetTabs: {
     all: "All submissions",
     passed: "Passed",
