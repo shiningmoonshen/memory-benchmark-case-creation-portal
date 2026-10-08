@@ -142,7 +142,7 @@ export default function EditorPage() {
 
   const handleShowExample = () => {
     const ex = examples[Math.floor(Math.random() * examples.length)];
-    const inp = ex.caseInput as typeof EMPTY & { memory: BlockDraft[] };
+    const inp = ex.caseInput as unknown as { title: string; memory: BlockDraft[]; prompt: string; expectedAnswer: string; questionType: string; evidence: string };
     setDraft({
       title: inp.title,
       blocks: inp.memory.map((b: any) => ({ ...b, _id: uid() })),
