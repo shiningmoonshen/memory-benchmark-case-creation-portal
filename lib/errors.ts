@@ -5,6 +5,7 @@ export const ERROR_CODES = [
   "SHEETS_RATE_LIMIT",
   "ANTHROPIC_AUTH",
   "ANTHROPIC_BAD_MODEL",
+  "ANTHROPIC_BAD_REQUEST",
   "OPENAI_AUTH",
   "OPENAI_BAD_PARAM",
   "PROVIDER_TIMEOUT",
@@ -47,8 +48,27 @@ function httpStatus(err: unknown): number {
   return 0;
 }
 
+/**
+ * Extracts the provider-level error type string from Anthropic/OpenAI SDK errors.
+ * Anthropic errors nest it as err.error.error.type ("invalid_request_error" etc.).
+ * OpenAI errors expose it at err.type or err.error.type.
+ */
+function extractApiType(err: unknown): string | undefined {
+  const e = err as Record<string, unknown>;
+  const body = e?.error as Record<string, unknown> | undefined;
+  return (
+    ((body?.error as Record<string, unknown>)?.type as string | undefined) ??
+    (body?.type as string | undefined) ??
+    (e?.type as string | undefined)
+  );
+}
+
 export function classifyError(err: unknown, stage: string): ErrorDetail {
-  const raw = err instanceof Error ? err.message : String(err);
+  const apiType = extractApiType(err);
+  const base = err instanceof Error ? err.message : String(err);
+  // Prepend the provider's own error type so it's visible in logs,
+  // e.g. "invalid_request_error: messages.0.content should be a non-empty string"
+  const raw = apiType ? `${apiType}: ${base}` : base;
   const lower = raw.toLowerCase();
   const status = httpStatus(err);
   const isAbort =
@@ -91,6 +111,8 @@ export function classifyError(err: unknown, stage: string): ErrorDetail {
       (lower.includes("model") && lower.includes("invalid"))
     ) {
       code = "ANTHROPIC_BAD_MODEL";
+    } else if (status === 400 || lower.includes("invalid_request")) {
+      code = "ANTHROPIC_BAD_REQUEST";
     } else {
       code = "PROVIDER_TIMEOUT";
     }

@@ -64,5 +64,12 @@ export function createSheetsClient(): SheetsClient {
       });
       return (response.data.values ?? []) as string[][];
     },
+
+    async ensureHeaders(tab: string, headers: string[]): Promise<void> {
+      const rows = await this.getRows(tab);
+      if (rows.length === 0) {
+        await this.append(tab, [headers]);
+      }
+    },
   };
 }

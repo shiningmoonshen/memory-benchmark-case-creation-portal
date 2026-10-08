@@ -3,6 +3,31 @@ import type { CaseInput, Outcome, JudgeResponse } from "../schema";
 const MAX_CELL_CHARS = 49_000;
 const FORMULA_RISK = /^[=+\-@\t\r]/;
 
+/** Column headers in the exact order they appear in each row. Used to seed empty tabs. */
+export const COLUMN_HEADERS: string[] = [
+  "Submission ID",
+  "Case ID",
+  "Version",
+  "Parent submission",
+  "Character",
+  "Timestamp",
+  "Result",
+  "Memory (JSON)",
+  "Prompt",
+  "Expected answer",
+  "Question type",
+  "Evidence",
+  "Model answers",
+  "Judge verdicts + reasons",
+  "Wrong count",
+  "Oracle answer + verdict",
+  "Flags",
+  "Provenance",
+  "Model versions",
+  "Error detail",
+  "Deployment",
+];
+
 export function escapeFormula(cell: string): string {
   return FORMULA_RISK.test(cell) ? `'${cell}` : cell;
 }
@@ -30,6 +55,7 @@ export interface RowInput {
   flags: string[];
   modelVersions: string;
   errorDetail: string;
+  deployment: string;
 }
 
 export function buildRow(input: RowInput): string[] {
@@ -48,6 +74,7 @@ export function buildRow(input: RowInput): string[] {
     flags,
     modelVersions,
     errorDetail,
+    deployment,
   } = input;
 
   const modelAnswersStr = testAnswers.map((a, i) => `Run ${i + 1}: ${a}`).join("\n");
@@ -77,5 +104,6 @@ export function buildRow(input: RowInput): string[] {
     safe("human-authored"),
     safe(modelVersions),
     safe(errorDetail),
+    safe(deployment),
   ];
 }

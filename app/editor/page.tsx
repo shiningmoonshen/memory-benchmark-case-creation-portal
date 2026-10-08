@@ -356,23 +356,153 @@ export default function EditorPage() {
 
   return (
     <div className="editor-page">
-      {/* Toolbar */}
-      <div className="toolbar">
-        <button className="toolbar-btn" onClick={handleShowExample}>
-          Show me an example
-        </button>
-        <div className="toolbar-right">
-          <span className="char-avatar">{character.emoji}</span>
-          <span className="char-name">{character.name}</span>
-          <button className="toolbar-link" onClick={() => router.push("/")}>
-            Switch
+      {/* ── Toolbar chrome ── */}
+      <div className="toolbar-chrome">
+        {/* App bar */}
+        <div className="appbar">
+          <div className="appbar-left">
+            <svg className="docs-logo" width="20" height="24" viewBox="0 0 20 24" fill="none" aria-hidden="true">
+              <path d="M2.5 0H13L19.5 6V22C19.5 23.1 18.6 24 17.5 24H2.5C1.4 24 0.5 23.1 0.5 22V2C0.5 0.9 1.4 0 2.5 0Z" fill="#4285f4"/>
+              <path d="M13 0L19.5 6H13Z" fill="#a8c7fa"/>
+              <rect x="3.5" y="11" width="11" height="1.4" rx="0.7" fill="white"/>
+              <rect x="3.5" y="14.2" width="11" height="1.4" rx="0.7" fill="white"/>
+              <rect x="3.5" y="17.4" width="7" height="1.4" rx="0.7" fill="white"/>
+            </svg>
+            <div className="appbar-meta">
+              <span className="appbar-docname">{draft.title || "Untitled"}</span>
+              <div className="menu-bar">
+                {["File","Edit","View","Insert","Format","Tools","Help"].map(item => (
+                  <button key={item} className="menu-item" tabIndex={-1}>{item}</button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="appbar-right">
+            <button className="example-link" onClick={handleShowExample}>Show me an example</button>
+            <div className="char-chip">
+              <span className="char-avatar">{character.emoji}</span>
+              <span className="char-name">{character.name}</span>
+              <button className="char-switch" onClick={() => router.push("/")}>Switch</button>
+            </div>
+            <button className="btn-submit" onClick={() => doSubmit()} disabled={phase !== "idle"}>
+              Submit
+            </button>
+          </div>
+        </div>
+
+        {/* Formatting toolbar (decorative — sells the Docs look) */}
+        <div className="format-bar" aria-hidden="true">
+          <button className="fmt-btn" tabIndex={-1} title="Undo">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M5 4C7 2 10 2 12 4C14 6 14 9.5 12 11.5C10 13.5 6.5 14 4 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+              <path d="M2 2.5L5.5 5.5L3 8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
           </button>
-          <button
-            className="btn-submit"
-            onClick={() => doSubmit()}
-            disabled={phase !== "idle"}
-          >
-            Submit
+          <button className="fmt-btn" tabIndex={-1} title="Redo">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M11 4C9 2 6 2 4 4C2 6 2 9.5 4 11.5C6 13.5 9.5 14 12 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+              <path d="M14 2.5L10.5 5.5L13 8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+          <button className="fmt-btn" tabIndex={-1} title="Print">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <rect x="3" y="1.5" width="10" height="5" rx="0.5" stroke="currentColor" strokeWidth="1.2"/>
+              <rect x="1.5" y="5.5" width="13" height="7" rx="1" stroke="currentColor" strokeWidth="1.2"/>
+              <rect x="4" y="11" width="8" height="3.5" fill="white" stroke="currentColor" strokeWidth="1.1"/>
+              <circle cx="13" cy="8.5" r="0.9" fill="currentColor"/>
+            </svg>
+          </button>
+          <div className="fmt-sep"/>
+          <button className="fmt-dropdown fmt-style" tabIndex={-1}>Normal text<span className="fmt-caret">▾</span></button>
+          <button className="fmt-dropdown fmt-font" tabIndex={-1}>Arial<span className="fmt-caret">▾</span></button>
+          <div className="fmt-size">
+            <button className="fmt-size-btn" tabIndex={-1}>−</button>
+            <span className="fmt-size-val">11</span>
+            <button className="fmt-size-btn" tabIndex={-1}>+</button>
+          </div>
+          <div className="fmt-sep"/>
+          <button className="fmt-btn fmt-b" tabIndex={-1} title="Bold">B</button>
+          <button className="fmt-btn fmt-i" tabIndex={-1} title="Italic">I</button>
+          <button className="fmt-btn fmt-u" tabIndex={-1} title="Underline">U</button>
+          <button className="fmt-btn fmt-s" tabIndex={-1} title="Strikethrough">S</button>
+          <div className="fmt-sep"/>
+          <button className="fmt-btn" tabIndex={-1} title="Text color">
+            <span className="fmt-color-a">A</span>
+          </button>
+          <button className="fmt-btn" tabIndex={-1} title="Highlight color">
+            <span className="fmt-hl">ab</span>
+          </button>
+          <div className="fmt-sep"/>
+          <button className="fmt-btn" tabIndex={-1} title="Insert link">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M6.5 10a3.2 3.2 0 0 0 4.5 0l1.5-1.5a3.2 3.2 0 0 0-4.5-4.5L7 5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+              <path d="M9.5 6a3.2 3.2 0 0 0-4.5 0L3.5 7.5a3.2 3.2 0 0 0 4.5 4.5L9 11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+            </svg>
+          </button>
+          <div className="fmt-sep"/>
+          <button className="fmt-btn" tabIndex={-1} title="Align left">
+            <svg width="16" height="16" viewBox="0 0 16 16">
+              <rect x="1.5" y="3" width="13" height="1.5" rx="0.75" fill="currentColor"/>
+              <rect x="1.5" y="6.5" width="8.5" height="1.5" rx="0.75" fill="currentColor"/>
+              <rect x="1.5" y="10" width="13" height="1.5" rx="0.75" fill="currentColor"/>
+              <rect x="1.5" y="13.5" width="8.5" height="1.5" rx="0.75" fill="currentColor"/>
+            </svg>
+          </button>
+          <button className="fmt-btn" tabIndex={-1} title="Align center">
+            <svg width="16" height="16" viewBox="0 0 16 16">
+              <rect x="1.5" y="3" width="13" height="1.5" rx="0.75" fill="currentColor"/>
+              <rect x="3.75" y="6.5" width="8.5" height="1.5" rx="0.75" fill="currentColor"/>
+              <rect x="1.5" y="10" width="13" height="1.5" rx="0.75" fill="currentColor"/>
+              <rect x="3.75" y="13.5" width="8.5" height="1.5" rx="0.75" fill="currentColor"/>
+            </svg>
+          </button>
+          <button className="fmt-btn" tabIndex={-1} title="Align right">
+            <svg width="16" height="16" viewBox="0 0 16 16">
+              <rect x="1.5" y="3" width="13" height="1.5" rx="0.75" fill="currentColor"/>
+              <rect x="6" y="6.5" width="8.5" height="1.5" rx="0.75" fill="currentColor"/>
+              <rect x="1.5" y="10" width="13" height="1.5" rx="0.75" fill="currentColor"/>
+              <rect x="6" y="13.5" width="8.5" height="1.5" rx="0.75" fill="currentColor"/>
+            </svg>
+          </button>
+          <div className="fmt-sep"/>
+          <button className="fmt-btn" tabIndex={-1} title="Numbered list">
+            <svg width="16" height="16" viewBox="0 0 16 16">
+              <text x="1" y="6" fontSize="4.5" fill="currentColor" fontFamily="sans-serif">1.</text>
+              <text x="1" y="9.5" fontSize="4.5" fill="currentColor" fontFamily="sans-serif">2.</text>
+              <text x="1" y="13" fontSize="4.5" fill="currentColor" fontFamily="sans-serif">3.</text>
+              <rect x="7" y="4.5" width="7.5" height="1.4" rx="0.7" fill="currentColor"/>
+              <rect x="7" y="8" width="7.5" height="1.4" rx="0.7" fill="currentColor"/>
+              <rect x="7" y="11.5" width="7.5" height="1.4" rx="0.7" fill="currentColor"/>
+            </svg>
+          </button>
+          <button className="fmt-btn" tabIndex={-1} title="Bulleted list">
+            <svg width="16" height="16" viewBox="0 0 16 16">
+              <circle cx="3" cy="5.5" r="1.4" fill="currentColor"/>
+              <circle cx="3" cy="9.5" r="1.4" fill="currentColor"/>
+              <circle cx="3" cy="13.5" r="1.4" fill="currentColor"/>
+              <rect x="6.5" y="4.5" width="8" height="1.4" rx="0.7" fill="currentColor"/>
+              <rect x="6.5" y="8.5" width="8" height="1.4" rx="0.7" fill="currentColor"/>
+              <rect x="6.5" y="12.5" width="8" height="1.4" rx="0.7" fill="currentColor"/>
+            </svg>
+          </button>
+          <div className="fmt-sep"/>
+          <button className="fmt-btn" tabIndex={-1} title="Decrease indent">
+            <svg width="16" height="16" viewBox="0 0 16 16">
+              <rect x="1.5" y="2.5" width="13" height="1.5" rx="0.75" fill="currentColor"/>
+              <rect x="5.5" y="6" width="9" height="1.5" rx="0.75" fill="currentColor"/>
+              <rect x="5.5" y="9.5" width="9" height="1.5" rx="0.75" fill="currentColor"/>
+              <rect x="1.5" y="13" width="13" height="1.5" rx="0.75" fill="currentColor"/>
+              <path d="M4.5 7.75L1.5 6L1.5 9.5Z" fill="currentColor"/>
+            </svg>
+          </button>
+          <button className="fmt-btn" tabIndex={-1} title="Increase indent">
+            <svg width="16" height="16" viewBox="0 0 16 16">
+              <rect x="1.5" y="2.5" width="13" height="1.5" rx="0.75" fill="currentColor"/>
+              <rect x="5.5" y="6" width="9" height="1.5" rx="0.75" fill="currentColor"/>
+              <rect x="5.5" y="9.5" width="9" height="1.5" rx="0.75" fill="currentColor"/>
+              <rect x="1.5" y="13" width="13" height="1.5" rx="0.75" fill="currentColor"/>
+              <path d="M1.5 7.75L4.5 6L4.5 9.5Z" fill="currentColor"/>
+            </svg>
           </button>
         </div>
       </div>

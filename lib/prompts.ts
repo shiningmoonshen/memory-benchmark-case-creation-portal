@@ -1,13 +1,26 @@
 import type { MemoryBlock } from "./schema";
 
+/**
+ * Strips a trailing empty role turn (e.g. "Agent: " with no answer) from the end
+ * of a conversation block. Prevents a dangling "Agent:" line in the rendered prompt
+ * and ensures the content doesn't look like an incomplete assistant turn.
+ */
+function stripTrailingEmptyTurn(content: string): string {
+  // Matches a newline + role label + colon + optional whitespace at end-of-string,
+  // e.g. "\nAgent: " or "\nUser:" — only when there is no content after the colon.
+  return content.trimEnd().replace(/\n[A-Za-z][A-Za-z0-9 ]*:\s*$/, "");
+}
+
 function renderMemory(blocks: MemoryBlock[]): string {
-  return blocks
+  const rendered = blocks
+    .filter((block) => block.content.trim().length > 0)
     .map((block) => {
       const typeLabel = block.type.toUpperCase();
       const titlePart = "title" in block && block.title ? ` — ${block.title}` : "";
-      return `[${typeLabel} — ${block.date}${titlePart}]\n${block.content}`;
+      return `[${typeLabel} — ${block.date}${titlePart}]\n${stripTrailingEmptyTurn(block.content)}`;
     })
     .join("\n\n");
+  return rendered || "(no memory provided)";
 }
 
 const ENTERPRISE_SYSTEM =

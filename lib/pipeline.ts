@@ -4,7 +4,7 @@ import { buildTestPrompt, buildOraclePrompt, buildJudgePrompt } from "./prompts"
 import { parseJudgeResponse } from "./judgeParse";
 import { decide } from "./decide";
 import { resolveVersion } from "./versioning";
-import { buildRow } from "./sheets/rowBuilder";
+import { buildRow, COLUMN_HEADERS } from "./sheets/rowBuilder";
 import { classifyError, type ErrorDetail } from "./errors";
 import { logStage } from "./logger";
 import type { CaseInput, PipelineResult, JudgeResponse } from "./schema";
@@ -144,6 +144,7 @@ export async function runPipeline(
   const versionInfo = await resolveVersion(caseInput.parentSubmissionId, sheetsClient);
 
   const modelVersions = `test:${config.testModel.modelId}, judge:${config.judgeModel.modelId}`;
+  const deployment = process.env.VERCEL_URL ?? "local";
   const row = buildRow({
     ...versionInfo,
     parentSubmissionId: caseInput.parentSubmissionId ?? "",
@@ -157,6 +158,7 @@ export async function runPipeline(
     flags,
     modelVersions,
     errorDetail: "",
+    deployment,
   });
 
   // Stage: sheets_write

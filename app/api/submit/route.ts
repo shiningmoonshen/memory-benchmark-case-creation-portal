@@ -9,6 +9,8 @@ import { OpenAIProvider } from "@/lib/providers/openai";
 import { MockProvider } from "@/lib/providers/mock";
 import { createSheetsClient } from "@/lib/sheets/client";
 import { FakeSheetsClient } from "@/lib/sheets/fakeClient";
+import { COLUMN_HEADERS } from "@/lib/sheets/rowBuilder";
+import { config } from "@/lib/config";
 
 export const maxDuration = 60;
 
@@ -71,6 +73,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const { testProvider, judgeProvider } = getProviders();
   const sheetsClient =
     process.env.LLM_MODE === "mock" ? new FakeSheetsClient() : createSheetsClient();
+
+  // Write column headers to each tab on first use. Idempotent — no-op if rows already exist.
+  // Fail silently so a transient Sheets error doesn't block the submission.
+  try {
+    await sheetsClient.ensureHeaders(config.sheetTabs.all, COLUMN_HEADERS);
+    await sheetsClient.ensureHeaders(config.sheetTabs.passed, COLUMN_HEADERS);
+  } catch {
+    // headers missing is better than losing the submission
+  }
 
   const result = await runPipeline(caseInput, testProvider, judgeProvider, sheetsClient, requestId);
 

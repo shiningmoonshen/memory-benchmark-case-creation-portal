@@ -20,6 +20,10 @@ export class AnthropicProvider implements LLMProvider {
     maxTokens: number;
     timeoutMs: number;
   }): Promise<string> {
+    if (!user.trim()) {
+      throw new Error("invalid_request_error: user message content is empty");
+    }
+
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {

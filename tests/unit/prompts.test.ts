@@ -61,6 +61,84 @@ describe("buildOraclePrompt", () => {
   });
 });
 
+describe("buildTestPrompt — edge cases", () => {
+  it("renders multiple blocks with blank lines and a conversation ending on Agent:", () => {
+    const blocks: MemoryBlock[] = [
+      {
+        type: "conversation",
+        date: "2024-07-01",
+        content:
+          "User: Hello\nAgent: Hi there\n\nUser: What is my budget?\nAgent: Your budget is $50,000.",
+      },
+      {
+        type: "document",
+        date: "2024-07-02",
+        title: "Q3 Notes",
+        content: "Line 1\n\nLine 2\n\nLine 3",
+      },
+      {
+        type: "conversation",
+        date: "2024-07-03",
+        // ends on an Agent: turn — trimEnd should strip trailing whitespace
+        content: "User: Thanks for confirming.\nAgent: You're welcome.\nUser: One more thing.\nAgent: ",
+      },
+    ];
+
+    const { user } = buildTestPrompt(blocks, "What is my budget?");
+
+    // Single non-empty string — not an array or multi-turn structure
+    expect(typeof user).toBe("string");
+    expect(user.trim().length).toBeGreaterThan(0);
+
+    // All block content present as plain text
+    expect(user).toContain("$50,000");
+    expect(user).toContain("Q3 Notes");
+    expect(user).toContain("Line 1");
+    expect(user).toContain("You're welcome.");
+    expect(user).toContain("What is my budget?");
+
+    // Trailing empty Agent: turn should be trimmed, not left dangling
+    expect(user).not.toMatch(/Agent:\s*$/m);
+  });
+
+  it("filters out blocks with empty or whitespace-only content", () => {
+    const blocks: MemoryBlock[] = [
+      { type: "conversation", date: "2024-07-01", content: "User: Hi\nAgent: Hello" },
+      { type: "document", date: "2024-07-02", content: "" },
+      { type: "transcript", date: "2024-07-03", content: "   " },
+    ];
+
+    const { user } = buildTestPrompt(blocks, "What did the user say?");
+
+    // The empty/whitespace blocks should not create headers with no content
+    expect(user).toContain("User: Hi");
+    // Only one block header should appear (the conversation)
+    expect(user.match(/\[CONVERSATION/g)?.length).toBe(1);
+    expect(user).not.toContain("[DOCUMENT");
+    expect(user).not.toContain("[TRANSCRIPT");
+  });
+
+  it("returns a non-empty user message even if all blocks are filtered out", () => {
+    const blocks: MemoryBlock[] = [
+      { type: "conversation", date: "2024-07-01", content: "" },
+    ];
+
+    const { user } = buildTestPrompt(blocks, "What happened?");
+    expect(user.trim().length).toBeGreaterThan(0);
+  });
+
+  it("user message is a plain string — no array or message-turn structure", () => {
+    const { user, system } = buildTestPrompt(memory, "What is my budget?");
+    // Both must be plain strings, never arrays
+    expect(typeof user).toBe("string");
+    expect(typeof system).toBe("string");
+    // User:/Agent: labels inside content must not be message role separators
+    // (verify they appear as literal text inside the user string)
+    expect(user).toContain("User:");
+    expect(user).toContain("Agent:");
+  });
+});
+
 describe("buildJudgePrompt", () => {
   it("wraps each value in XML delimiters", () => {
     const { user } = buildJudgePrompt("Who sent the email?", "Alice", "Bob");

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildRow, escapeFormula, clampCell } from "../../lib/sheets/rowBuilder";
+import { buildRow, escapeFormula, clampCell, COLUMN_HEADERS } from "../../lib/sheets/rowBuilder";
 import type { CaseInput, JudgeResponse } from "../../lib/schema";
 
 const baseCaseInput: CaseInput = {
@@ -33,6 +33,7 @@ const baseRowInput = {
   flags: [],
   modelVersions: "test:claude-sonnet-5-5, judge:gpt-6.1-sol",
   errorDetail: "",
+  deployment: "local",
 };
 
 describe("escapeFormula", () => {
@@ -97,9 +98,23 @@ describe("clampCell", () => {
 });
 
 describe("buildRow", () => {
-  it("produces exactly 20 columns", () => {
+  it("produces exactly 21 columns", () => {
     const row = buildRow(baseRowInput);
-    expect(row).toHaveLength(20);
+    expect(row).toHaveLength(21);
+  });
+
+  it("column count matches COLUMN_HEADERS length", () => {
+    expect(buildRow(baseRowInput)).toHaveLength(COLUMN_HEADERS.length);
+  });
+
+  it("places deployment identifier at index 20", () => {
+    const row = buildRow({ ...baseRowInput, deployment: "myapp-abc123.vercel.app" });
+    expect(row[20]).toBe("myapp-abc123.vercel.app");
+  });
+
+  it("deployment falls back to local when not on Vercel", () => {
+    const row = buildRow({ ...baseRowInput, deployment: "local" });
+    expect(row[20]).toBe("local");
   });
 
   it("places result (lowercase) at index 6", () => {

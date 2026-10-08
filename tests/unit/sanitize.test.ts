@@ -106,4 +106,20 @@ describe("classifyError — stage routing", () => {
     expect(detail.message).not.toContain("sk-ant-api03-secretXYZ123");
     expect(detail.message.length).toBeLessThanOrEqual(200);
   });
+
+  it("classifies Anthropic 400 as ANTHROPIC_BAD_REQUEST", () => {
+    const err = Object.assign(new Error("messages.0.content: should be a non-empty string"), {
+      status: 400,
+    });
+    expect(classifyError(err, "runs").code).toBe("ANTHROPIC_BAD_REQUEST");
+  });
+
+  it("prepends the nested API error type to the log message", () => {
+    const err = Object.assign(new Error("messages.0.content: should be a non-empty string"), {
+      status: 400,
+      error: { error: { type: "invalid_request_error" } },
+    });
+    const detail = classifyError(err, "runs");
+    expect(detail.message).toContain("invalid_request_error");
+  });
 });
