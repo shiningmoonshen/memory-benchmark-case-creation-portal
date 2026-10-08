@@ -81,13 +81,15 @@ describe("provider error → ERROR outcome", () => {
     expect(["PASS", "FAIL", "FLAGGED"]).not.toContain(result.outcome);
   });
 
-  it("ERROR result does not write a row to Sheets", async () => {
+  it("ERROR result writes an error row to All submissions", async () => {
     const errorProvider = new MockProvider("error");
     const judgeProvider = new MockProvider("pass");
     const sheets = new FakeSheetsClient();
 
     await runPipeline(baseCase, errorProvider, judgeProvider, sheets, "test-req-err");
 
-    expect(sheets.getAllRows(config.sheetTabs.all)).toHaveLength(0);
+    const rows = sheets.getAllRows(config.sheetTabs.all);
+    expect(rows).toHaveLength(1);
+    expect(rows[0][6]).toBe("error");
   });
 });
