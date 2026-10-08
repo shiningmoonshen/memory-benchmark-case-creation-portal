@@ -1,5 +1,7 @@
 # Memory Benchmark Case Creation Portal
 
+**[Design Doc](DesignDoc.md)** · [PDF](DesignDoc.pdf)
+
 A Google Docs-style web app where subject-matter experts write benchmark cases for agentic memory in enterprise chatbots. Each case is run against Claude; a case is **kept only if it stumps the model**. Every submission is graded by an LLM judge and logged to Google Sheets.
 
 ## Setup
