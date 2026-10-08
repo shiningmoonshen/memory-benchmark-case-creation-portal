@@ -1,0 +1,92 @@
+[
+  {
+    "id": "example-pass",
+    "intendedOutcome": "PASS",
+    "description": "Multi-session arithmetic: original budget minus a later shift",
+    "caseInput": {
+      "characterId": "bunny",
+      "title": "Q3 software budget after reallocation",
+      "memory": [
+        {
+          "type": "conversation",
+          "date": "2024-07-02",
+          "content": "User: I want to track my Q3 software budget. We have $50,000 approved for the quarter.\nAgent: Got it, I'll note that your Q3 software budget is $50,000."
+        },
+        {
+          "type": "conversation",
+          "date": "2024-08-14",
+          "content": "User: We ended up shifting $8,000 from software to the contractor line.\nAgent: Understood, I've updated the note."
+        }
+      ],
+      "prompt": "What is the current remaining balance in my Q3 software budget?",
+      "expectedAnswer": "$42,000",
+      "questionType": "multi-session reasoning",
+      "evidence": "User: I want to track my Q3 software budget. We have $50,000 approved for the quarter.\nUser: We ended up shifting $8,000 from software to the contractor line."
+    }
+  },
+  {
+    "id": "example-fail",
+    "intendedOutcome": "FAIL",
+    "description": "Single fact recall — too straightforward for the model to miss",
+    "caseInput": {
+      "characterId": "raccoon",
+      "title": "Preferred meeting day",
+      "memory": [
+        {
+          "type": "conversation",
+          "date": "2024-09-03",
+          "content": "User: Can you help me schedule team syncs? I prefer Wednesdays, usually around 2pm.\nAgent: Sure, I'll keep in mind that you prefer Wednesdays at 2pm for team syncs."
+        }
+      ],
+      "prompt": "What day do I prefer for team syncs?",
+      "expectedAnswer": "Wednesday",
+      "questionType": "single-session recall",
+      "evidence": "User: I prefer Wednesdays, usually around 2pm."
+    }
+  },
+  {
+    "id": "example-conflict",
+    "intendedOutcome": "FLAGGED",
+    "description": "Conflicting project owner across two conversations — oracle may pick the wrong one",
+    "caseInput": {
+      "characterId": "beaver",
+      "title": "Atlas initiative owner change",
+      "memory": [
+        {
+          "type": "conversation",
+          "date": "2024-06-10",
+          "content": "User: Marcus Chen is the project owner for the Atlas initiative.\nAgent: Noted, Marcus Chen owns the Atlas initiative."
+        },
+        {
+          "type": "conversation",
+          "date": "2024-07-01",
+          "content": "User: The Atlas initiative ownership has moved to Sandra Kim.\nAgent: Got it, I've updated that to Sandra Kim."
+        }
+      ],
+      "prompt": "Who currently owns the Atlas initiative?",
+      "expectedAnswer": "Sandra Kim",
+      "questionType": "conflict resolution",
+      "evidence": "User: Marcus Chen is the project owner for the Atlas initiative.\nUser: The Atlas initiative ownership has moved to Sandra Kim."
+    }
+  },
+  {
+    "id": "example-abstention",
+    "intendedOutcome": "PASS",
+    "description": "Info was never given — AI should say it doesn't know",
+    "caseInput": {
+      "characterId": "bear",
+      "title": "Unknown vendor contact",
+      "memory": [
+        {
+          "type": "conversation",
+          "date": "2024-10-01",
+          "content": "User: I'm working with Northgate Industries on the new supply contract.\nAgent: Got it, you're working with Northgate Industries on a supply contract."
+        }
+      ],
+      "prompt": "What is the direct phone number for the Northgate Industries account manager?",
+      "expectedAnswer": "I don't know — that information wasn't provided.",
+      "questionType": "abstention",
+      "evidence": ""
+    }
+  }
+]
